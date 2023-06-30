@@ -8,13 +8,13 @@
 #' prepares :
 #'   - a table of address
 #'     - scope : only those with a minimal geolocalization quality
-#'     - BAN quality "housenumber", "interpolation" or "locality"
+#'     - BAN quality "housenumber", "interpolation" or "locality" (or geo_score > a given threshold, 0.6 by default)
 #'   - list of cities with at least 2 BVs (among filtered addresses)
 #'   - List of city geometric contours
 #'   
 #' Operations : 
 #'  - Removes arrondissement codes for Paris, Lyon and Marseille
-#'  - Filters addresses (only "housenumber", "interpolation" or "locality" quality)
+#'  - Filters addresses (only "housenumber", "interpolation" or "locality" quality or geo_score > a given threshold, 0.6 by default)
 #'  - Filters cities with at least 2 vote offices
 #'  - Transform address as geometric points (WGS84 projection)
 #'  - Filters geometric city contours (only cities with at least 2 vote offices)
@@ -43,7 +43,7 @@
 #'   var_bv1 = "id_brut_bv_reu",
 #'   path_log = NULL
 #' )
-prepare_address <- function(address, contours_com, var_cog1 = "code_commune_ref", var_cog2 = "code_insee", var_bv1 = "id_brut_bv_reu", path_log = NULL) {
+prepare_address <- function(address, contours_com, var_cog1 = "code_commune_ref", var_cog2 = "code_insee", var_bv1 = "id_brut_bv_reu", seuil_geo_score = 0.6, path_log = NULL) {
 
   # Open logs
   if (!is.null(path_log)) {
@@ -63,7 +63,7 @@ prepare_address <- function(address, contours_com, var_cog1 = "code_commune_ref"
   # Remove "arrondissements" codes for Paris-Lyon-Marseille
   address <- address %>% rm_arrond(var_cog1)
 
-  address <- address %>% dplyr::filter(.data[["geo_type"]] %in% c("housenumber", "interpolation", "locality"))
+  address <- address %>% dplyr::filter(.data[["geo_type"]] %in% c("housenumber", "interpolation", "locality") | .data[["geo_score"]] > seuil_geo_score)
   logr::put("Row number after filtering geo_type")
   logr::put(nrow(address))
 
